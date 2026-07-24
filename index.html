@@ -1589,17 +1589,54 @@ async function renderMine(){
     const court = findCourt(r.court_id);
     const statusHtml = r.status==='paid_confirmed' ? `<span class="status-pill paid">Zaplaceno</span>` : (r.status==='pending_payment' ? `<span class="status-pill pending">Čeká na platbu</span>` : `<span class="status-pill blocked">${r.status}</span>`);
     const playersNote = r.players && r.players.length>1 ? ` · ${r.players.length} hráči` : '';
+    const unlockHtml = isUnlockWindowActive(r) ? `
+      <div class="access-buttons" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;width:100%;">
+        <button class="btn btn-sm btn-primary" onclick="unlockAccess('${r.id}','gate_a', this)">🔓 Branka A</button>
+        <button class="btn btn-sm btn-primary" onclick="unlockAccess('${r.id}','gate_b', this)">🔓 Branka B</button>
+        <button class="btn btn-sm btn-primary" onclick="unlockAccess('${r.id}','locker', this)">🔓 Šatna</button>
+      </div>` : '';
     return `<div class="card"><div class="info">
         <b>${court.locationName} · ${court.name}</b>
         <div class="meta">${fmtDate(r.date)} · ${formatHour(r.start_hour)}–${formatHour(r.end_hour)} · ${r.amount_due} Kč${playersNote} ${r.is_open_match?'· 🔍 Open Match':''}</div>
-      </div><div class="actions">
+      </div><div class="actions" style="flex-wrap:wrap;">
         ${statusHtml}
         ${r.status==='pending_payment' ? `<button class="btn btn-sm btn-ghost" onclick='openPaymentModalFor(${JSON.stringify(r)})'>Zaplatit</button>` : ''}
         ${['pending_payment','paid_confirmed'].includes(r.status) ? `<button class="btn btn-sm btn-ghost" onclick="cancelReservation('${r.id}')">Zrušit</button>` : ''}
+        ${unlockHtml}
       </div></div>`;
   }).join('');
 
   el.innerHTML = seriesCards + singleCards || emptyState('Zatím žádné aktivní rezervace', 'Vyber si hřiště v Rezervacích.');
+}
+
+// Aktivní okno = zaplacená rezervace na dnešek, od 10 minut před začátkem do konce.
+function isUnlockWindowActive(r){
+  if(r.status !== 'paid_confirmed') return false;
+  const todayStr = toLocalISODate(new Date());
+  if(r.date !== todayStr) return false;
+  const now = new Date();
+  const nowHour = now.getHours() + now.getMinutes()/60;
+  return nowHour >= (Number(r.start_hour) - 10/60) && nowHour < Number(r.end_hour);
+}
+
+async function unlockAccess(reservationId, channel, btnEl){
+  const labels = { gate_a: 'Branka A', gate_b: 'Branka B', locker: 'Šatna' };
+  if(btnEl){ btnEl.disabled = true; btnEl.textContent = 'Odemykám…'; }
+  try{
+    const { data: sessionData } = await sb.auth.getSession();
+    const token = sessionData?.session?.access_token;
+    const { data, error } = await sb.functions.invoke('court-access', {
+      body: { reservation_id: reservationId, channel },
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    if(error){ toast('Chyba: ' + error.message); return; }
+    if(data && data.success){ toast(data.message || `${labels[channel]}: odemčeno`); }
+    else { toast((data && data.message) || 'Nepodařilo se odemknout, kontaktuj správce.'); }
+  } catch(e){
+    toast('Chyba spojení: ' + e.message);
+  } finally {
+    if(btnEl){ btnEl.disabled = false; btnEl.textContent = '🔓 ' + labels[channel]; }
+  }
 }
 async function cancelReservation(id){
   const status = isAdmin() ? 'cancelled_by_admin' : 'cancelled_by_user';
