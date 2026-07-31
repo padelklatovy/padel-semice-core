@@ -232,7 +232,7 @@
   <section class="view active" id="view-reservations">
     <h1 class="page-title">Rezervace kurtů</h1>
     <p class="page-sub" id="reservationsIntro">Vyber si hřiště / lokalitu, kde chceš rezervovat.</p>
-    <button class="btn btn-ghost btn-sm" id="allVenuesToggleBtn" style="display:none;margin-bottom:14px;" onclick="showAllVenuesGrid()">📋 Zobrazit všechny areály najednou</button>
+
     <div id="productSelector" class="product-grid"></div>
     <div id="allVenuesWrap" style="display:none;">
       <div class="active-product-bar">
@@ -870,9 +870,6 @@ function renderHeader(){
       </div>`;
   }
   document.querySelector('[data-view="admin"]').style.display = isAdmin() ? '' : 'none';
-  document.getElementById('barTab').style.display = isAdmin() ? '' : 'none';
-  document.getElementById('createEventTab').style.display = isAdmin() ? '' : 'none';
-  document.getElementById('allVenuesToggleBtn').style.display = isAdmin() ? '' : 'none';
   document.querySelectorAll('.legend-admin-only').forEach(el=>{ el.style.display = isAdmin() ? '' : 'none'; });
   document.getElementById('dashboardTab').style.display = isAdmin() ? '' : 'none';
 }
