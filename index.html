@@ -96,6 +96,19 @@
   .icon-btn:hover{background:var(--paper-dim);}
 
   .grid-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--paper-dim);box-shadow:0 1px 3px rgba(0,0,0,0.06);padding:2px;}
+  .week-day-block{margin-bottom:14px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 10px 6px;}
+  .week-day-title{font-family:var(--font-head);font-weight:700;font-size:13px;margin-bottom:6px;cursor:pointer;display:flex;align-items:center;gap:8px;}
+  .week-day-title:hover{text-decoration:underline;}
+  .week-day-title .wd-today{background:var(--red);color:#fff;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;}
+  .week-mini .grid-row{column-gap:1px;margin-bottom:1px;}
+  .week-mini .hcell{font-size:6px;padding:2px 0 1px 1px;min-width:15px;}
+  .week-mini .cell{min-width:15px;}
+  .week-mini .court-label{padding:3px 6px;font-size:9px;min-width:0;}
+  .week-mini .court-label small{display:none;}
+  .week-mini .slot{height:26px;margin:1px;border-radius:3px;}
+  .week-mini .slot.spanning{margin:1px;height:calc(100% - 2px);}
+  .week-mini .slot .tag{display:flex;align-items:center;gap:2px;font-size:6.5px;font-weight:600;line-height:1.15;padding:0 3px;text-transform:none;letter-spacing:0;overflow:hidden;}
+  .week-mini .slot .tag-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
   .court-grid{width:100%;}
   .grid-row{display:grid;column-gap:2px;margin-bottom:2px;}
   .grid-row:first-child{background:#fff;border-radius:8px 8px 0 0;margin-bottom:4px;border-bottom:1px solid var(--line);}
@@ -220,6 +233,8 @@
   <button data-view="dashboard" id="dashboardTab" style="display:none;">Dashboard</button>
   <button data-view="reservations" class="active">Rezervace</button>
   <button data-view="mine">Moje rezervace</button>
+  <button data-view="weekview" id="weekTab" style="display:none;">Týden</button>
+  <button data-view="bulkemail" id="bulkEmailTab" style="display:none;">✉️ Hromadný e-mail</button>
   <button data-view="admin">Admin</button>
 </nav>
 
@@ -281,6 +296,49 @@
     <h1 class="page-title">Moje rezervace</h1>
     <p class="page-sub">Přehled tvých rezervací napříč všemi hřišti a stav platby.</p>
     <div class="card-list" id="mineList">Načítání…</div>
+  </section>
+
+  <section class="view" id="view-weekview">
+    <h1 class="page-title">Týdenní přehled — PADEL Semice</h1>
+    <div class="date-nav" style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <div class="date-nav" style="display:flex;gap:6px;"><button class="icon-btn" id="adminWeekPrev">‹</button><button class="icon-btn" id="adminWeekNext">›</button></div>
+      <div class="date-label" id="adminWeekLabel" style="font-weight:600;"></div>
+      <button class="btn btn-ghost btn-sm" id="adminWeekTodayBtn">Tento týden</button>
+    </div>
+    <div id="adminWeekGridContent">Načítání…</div>
+  </section>
+
+  <section class="view" id="view-bulkemail">
+    <h1 class="page-title">Hromadný e-mail</h1>
+    <p class="page-sub">Pošle e-mail všem členům (nebo jen vybrané úrovni), každému zvlášť, ne přes cc/bcc.</p>
+    <div class="card" style="display:block;">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+        <div class="field" style="flex:1;min-width:200px;margin:0;"><label>Komu — členská úroveň</label>
+          <select id="bulkEmailTier">
+            <option value="all">Všem členům</option>
+            <option value="clen">Jen úroveň "Člen"</option>
+            <option value="trener">Jen úroveň "Trenér"</option>
+            <option value="none">Jen "Nečlen"</option>
+          </select>
+        </div>
+        <div class="field" style="flex:1;min-width:200px;margin:0;"><label>Komu — hráčská úroveň</label>
+          <select id="bulkEmailLevel">
+            <option value="all">Všechny hráčské úrovně</option>
+            <option value="D2">D2 — Začátečník</option>
+            <option value="D1">D1 — Začátečník+</option>
+            <option value="C2">C2 — Mírně pokročilý</option>
+            <option value="C1">C1 — Mírně pokročilý+</option>
+            <option value="B2">B2 — Pokročilý</option>
+            <option value="B1">B1 — Pokročilý+</option>
+            <option value="A">A — Závodní</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" style="margin-top:10px;"><label>Předmět</label><input id="bulkEmailSubject" placeholder="např. Letní provoz kurtu — změna otevírací doby"></div>
+      <div class="field" style="margin-top:10px;"><label>Text zprávy</label><textarea id="bulkEmailMessage" rows="6" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;" placeholder="Ahoj,&#10;&#10;od pondělí..."></textarea></div>
+      <button class="btn btn-dark" style="margin-top:14px;" onclick="sendBulkEmail()" id="bulkEmailBtn">Odeslat</button>
+      <div id="bulkEmailStatus" style="margin-top:10px;font-size:13px;color:#6E6E6E;"></div>
+    </div>
   </section>
 
   <section class="view" id="view-admin">
@@ -684,6 +742,13 @@ function toLocalISODate(d){
   return `${y}-${m}-${day}`;
 }
 function todayISO(){ return toLocalISODate(new Date()); }
+function getWeekStart(dateStr){
+  const d = new Date(dateStr+'T00:00:00');
+  const dow = d.getDay(); // 0=neděle .. 6=sobota
+  const diffToMonday = (dow===0) ? -6 : (1-dow);
+  d.setDate(d.getDate()+diffToMonday);
+  return toLocalISODate(d);
+}
 function activeLoc(){ return venuesConfig[currentLocationId]; }
 function isAdmin(){ return profile && (profile.role==='admin' || profile.role==='owner'); }
 function isReceptionFor(venueSlug){
@@ -872,6 +937,8 @@ function renderHeader(){
   document.querySelector('[data-view="admin"]').style.display = isAdmin() ? '' : 'none';
   document.querySelectorAll('.legend-admin-only').forEach(el=>{ el.style.display = isAdmin() ? '' : 'none'; });
   document.getElementById('dashboardTab').style.display = isAdmin() ? '' : 'none';
+  document.getElementById('weekTab').style.display = isAdmin() ? '' : 'none';
+  document.getElementById('bulkEmailTab').style.display = isAdmin() ? '' : 'none';
 }
 function toggleProfileMenu(e){ e.stopPropagation(); document.getElementById('profileMenu').classList.toggle('show'); }
 async function goToCreateEvent(){
@@ -884,20 +951,23 @@ async function goToCreateEvent(){
 }
 function closeProfileMenu(){ const m=document.getElementById('profileMenu'); if(m) m.classList.remove('show'); }
 document.addEventListener('click', closeProfileMenu);
+function activateTab(view){
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  const el = document.getElementById('view-'+view);
+  if(el) el.classList.add('active');
+  if(view==='dashboard') renderDashboard();
+  if(view==='reservations' && isAdmin() && !currentLocationId) showAllVenuesGrid();
+  if(view==='admin') renderAdmin();
+  if(view==='mine') renderMine();
+  if(view==='openmatches') renderOpen();
+  if(view==='calendar') renderCalendar();
+  if(view==='weekview') renderAdminWeekGrid();
+}
 document.getElementById('tabs').addEventListener('click', (e)=>{
   if(e.target.tagName !== 'BUTTON') return;
   if(!e.target.dataset.view) return;
-  document.querySelectorAll('#tabs button').forEach(b=>b.classList.remove('active'));
-  e.target.classList.add('active');
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  document.getElementById('view-'+e.target.dataset.view).classList.add('active');
-  const v = e.target.dataset.view;
-  if(v==='dashboard') renderDashboard();
-  if(v==='reservations' && isAdmin() && !currentLocationId) showAllVenuesGrid();
-  if(v==='admin') renderAdmin();
-  if(v==='mine') renderMine();
-  if(v==='openmatches') renderOpen();
-  if(v==='calendar') renderCalendar();
+  activateTab(e.target.dataset.view);
 });
 function goToHome(){
   document.querySelector('[data-view="reservations"]')?.click();
@@ -1543,6 +1613,127 @@ async function confirmPaymentCascade(reservationId, confirmedBy){
 }
 
 /* ================= MOJE REZERVACE ================= */
+function buildMiniDayGridHtml(loc, dateStr, dayReservations){
+  const starts = slotStarts(loc);
+  let html = `<div class="grid-row" style="grid-template-columns:110px repeat(${starts.length},minmax(15px,1fr));"><div class="cell court-label" style="border-radius:0;"></div>`;
+  starts.forEach(s => html += `<div class="hcell ${s%1!==0?'half':''}">${s%1!==0?'':formatHour(s)}</div>`);
+  html += `</div>`;
+  loc.courts.forEach(court => {
+    html += `<div class="grid-row" style="grid-template-columns:110px repeat(${starts.length},minmax(15px,1fr));"><div class="cell court-label">${court.name}</div>`;
+    if(court.isActive === false){
+      html += `<div class="cell" style="grid-column: span ${starts.length};"><div class="slot closed spanning"></div></div></div>`;
+      return;
+    }
+    let i = 0;
+    while(i < starts.length){
+      const s = starts[i];
+      if(!courtOpenAt(court, s, dateStr)){ html += `<div class="cell"><div class="slot closed"></div></div>`; i += 1; continue; }
+      const r = dayReservations.find(r => r.court_id===court.id && s >= r.start_hour && s < r.end_hour && !['cancelled_by_user','cancelled_by_admin','expired'].includes(r.status));
+      if(r && r.start_hour === s){
+        const span = Math.max(1, Math.round((r.end_hour - r.start_hour) * (1/loc.slotStep)));
+        let cls = 'taken', tag = r.organizer_name || 'Obsazeno';
+        if(r.status==='club_blocked'){ cls='event'; tag = 'Blokováno'; }
+        else if(Number(r.amount_due)===0 && r.status==='paid_confirmed'){ cls='freebie'; tag = r.organizer_name || 'Zdarma'; }
+        const titleText = tag; // prostý text bez HTML — jde do title="", který HTML značky nesmí obsahovat
+        html += `<div class="cell" style="grid-column: span ${span};"><div class="slot ${cls} spanning" title="${titleText} (klikni pro úpravu)" onclick="openWeekSlotEdit('${dateStr}','${court.id}',${s})"><span class="tag"><span class="tag-name">${tag}</span></span></div></div>`;
+        i += span;
+      } else {
+        html += `<div class="cell"><div class="slot free" title="Vytvořit rezervaci" onclick="openWeekSlotEdit('${dateStr}','${court.id}',${s})"></div></div>`;
+        i += 1;
+      }
+    }
+    html += `</div>`;
+  });
+  return html;
+}
+function scrollWeekMiniToEnd(wrap){
+  // Výchozí zobrazení mřížky je zarovnané na konec dne (kde bývá nejvíc rezervací) — jde odrolovat zpět na ráno.
+  requestAnimationFrame(()=>{
+    wrap.querySelectorAll('.week-mini').forEach(el => { el.scrollLeft = el.scrollWidth; });
+  });
+}
+function goToSemiceDay(dateStr){
+  selectedDate = dateStr;
+  activateTab('reservations');
+  selectProduct('semice');
+}
+async function openWeekSlotEdit(dateStr, courtId, startHour){
+  selectedDate = dateStr;
+  activateTab('reservations');
+  await selectProduct('semice'); // dotáhne rezervace pro daný den
+  const existing = findReservationAt(courtId, startHour);
+  openAdminSlotModal(courtId, startHour, existing);
+}
+let adminWeekAnchorDate = todayISO();
+async function renderAdminWeekGrid(){
+  const wrap = document.getElementById('adminWeekGridContent');
+  if(!wrap || !isAdmin()) return;
+  wrap.innerHTML = 'Načítání…';
+  const loc = venuesConfig['semice'];
+  if(!loc){ wrap.innerHTML = 'Areál PADEL Semice nenalezen.'; return; }
+  const weekStart = getWeekStart(adminWeekAnchorDate);
+  const weekEnd = toLocalISODate(new Date(new Date(weekStart+'T00:00:00').getTime() + 6*86400000));
+  document.getElementById('adminWeekLabel').textContent = `${fmtDate(weekStart)} – ${fmtDate(weekEnd)}`;
+  const { data, error } = await sb.from('reservations').select('*').eq('venue_id', loc.id).gte('date', weekStart).lte('date', weekEnd);
+  if(error){ wrap.innerHTML = `Chyba načítání: ${error.message}`; return; }
+  const dayNamesLong = ['Neděle','Pondělí','Úterý','Středa','Čtvrtek','Pátek','Sobota'];
+  const today = todayISO();
+  let html = '';
+  for(let i=0;i<7;i++){
+    const d = new Date(weekStart+'T00:00:00'); d.setDate(d.getDate()+i);
+    const dateStr = toLocalISODate(d);
+    const dayRes = data.filter(r=>r.date===dateStr);
+    html += `<div class="week-day-block">
+      <div class="week-day-title" onclick="goToSemiceDay('${dateStr}')">
+        ${dayNamesLong[d.getDay()]} ${d.getDate()}. ${d.getMonth()+1}.
+        ${dateStr===today ? '<span class="wd-today">DNES</span>' : ''}
+      </div>
+      <div class="week-mini grid-scroll"><div class="court-grid">${buildMiniDayGridHtml(loc, dateStr, dayRes)}</div></div>
+    </div>`;
+  }
+  wrap.innerHTML = html;
+  scrollWeekMiniToEnd(wrap);
+}
+document.getElementById('adminWeekPrev').onclick = ()=>{ const d=new Date(adminWeekAnchorDate+'T00:00:00'); d.setDate(d.getDate()-7); adminWeekAnchorDate=toLocalISODate(d); renderAdminWeekGrid(); };
+document.getElementById('adminWeekNext').onclick = ()=>{ const d=new Date(adminWeekAnchorDate+'T00:00:00'); d.setDate(d.getDate()+7); adminWeekAnchorDate=toLocalISODate(d); renderAdminWeekGrid(); };
+document.getElementById('adminWeekTodayBtn').onclick = ()=>{ adminWeekAnchorDate=todayISO(); renderAdminWeekGrid(); };
+
+async function sendBulkEmail(){
+  const subject = document.getElementById('bulkEmailSubject').value.trim();
+  const message = document.getElementById('bulkEmailMessage').value.trim();
+  const tierFilter = document.getElementById('bulkEmailTier').value;
+  const levelFilter = document.getElementById('bulkEmailLevel').value;
+  if(!subject || !message){ toast('Vyplň předmět i text zprávy'); return; }
+
+  const tierLabel = {all:'všem členům', clen:'úrovni Člen', trener:'úrovni Trenér', none:'úrovni Nečlen'}[tierFilter];
+  const levelLabel = levelFilter === 'all' ? '' : ` a hráčské úrovni ${levelFilter}`;
+  if(!confirm(`Opravdu odeslat tenhle e-mail ${tierLabel}${levelLabel}? Nejde to vzít zpátky.`)) return;
+
+  const btn = document.getElementById('bulkEmailBtn');
+  btn.disabled = true;
+  document.getElementById('bulkEmailStatus').textContent = 'Odesílám…';
+
+  const { data, error } = await sb.functions.invoke('send-bulk-email', {
+    body: { subject, message, tierFilter, levelFilter }
+  });
+
+  btn.disabled = false;
+  if(error){
+    document.getElementById('bulkEmailStatus').textContent = 'Chyba: ' + error.message;
+    return;
+  }
+  if(data.error){
+    document.getElementById('bulkEmailStatus').textContent = 'Chyba: ' + data.error;
+    return;
+  }
+  document.getElementById('bulkEmailStatus').textContent = `Odesláno ${data.sent} z ${data.total}.` + (data.errors?.length ? ` (${data.errors.length} dávek selhalo, zkus to znovu)` : '');
+  if(data.sent > 0){
+    toast(`E-mail odeslán (${data.sent}×)`);
+    document.getElementById('bulkEmailSubject').value = '';
+    document.getElementById('bulkEmailMessage').value = '';
+  }
+}
+
 async function renderMine(){
   const el = document.getElementById('mineList');
   if(!profile){ el.innerHTML = emptyState('Nejsi přihlášen', 'Přihlas se a uvidíš svoje rezervace zde.'); return; }
