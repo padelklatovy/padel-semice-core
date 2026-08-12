@@ -234,7 +234,6 @@
   <button data-view="reservations" class="active">Rezervace</button>
   <button data-view="mine">Moje rezervace</button>
   <button data-view="weekview" id="weekTab" style="display:none;">Týden</button>
-  <button data-view="bulkemail" id="bulkEmailTab" style="display:none;">✉️ Hromadný e-mail</button>
   <button data-view="admin">Admin</button>
 </nav>
 
@@ -306,39 +305,6 @@
       <button class="btn btn-ghost btn-sm" id="adminWeekTodayBtn">Tento týden</button>
     </div>
     <div id="adminWeekGridContent">Načítání…</div>
-  </section>
-
-  <section class="view" id="view-bulkemail">
-    <h1 class="page-title">Hromadný e-mail</h1>
-    <p class="page-sub">Pošle e-mail všem členům (nebo jen vybrané úrovni), každému zvlášť, ne přes cc/bcc.</p>
-    <div class="card" style="display:block;">
-      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
-        <div class="field" style="flex:1;min-width:200px;margin:0;"><label>Komu — členská úroveň</label>
-          <select id="bulkEmailTier">
-            <option value="all">Všem členům</option>
-            <option value="clen">Jen úroveň "Člen"</option>
-            <option value="trener">Jen úroveň "Trenér"</option>
-            <option value="none">Jen "Nečlen"</option>
-          </select>
-        </div>
-        <div class="field" style="flex:1;min-width:200px;margin:0;"><label>Komu — hráčská úroveň</label>
-          <select id="bulkEmailLevel">
-            <option value="all">Všechny hráčské úrovně</option>
-            <option value="D2">D2 — Začátečník</option>
-            <option value="D1">D1 — Začátečník+</option>
-            <option value="C2">C2 — Mírně pokročilý</option>
-            <option value="C1">C1 — Mírně pokročilý+</option>
-            <option value="B2">B2 — Pokročilý</option>
-            <option value="B1">B1 — Pokročilý+</option>
-            <option value="A">A — Závodní</option>
-          </select>
-        </div>
-      </div>
-      <div class="field" style="margin-top:10px;"><label>Předmět</label><input id="bulkEmailSubject" placeholder="např. Letní provoz kurtu — změna otevírací doby"></div>
-      <div class="field" style="margin-top:10px;"><label>Text zprávy</label><textarea id="bulkEmailMessage" rows="6" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;" placeholder="Ahoj,&#10;&#10;od pondělí..."></textarea></div>
-      <button class="btn btn-dark" style="margin-top:14px;" onclick="sendBulkEmail()" id="bulkEmailBtn">Odeslat</button>
-      <div id="bulkEmailStatus" style="margin-top:10px;font-size:13px;color:#6E6E6E;"></div>
-    </div>
   </section>
 
   <section class="view" id="view-admin">
@@ -433,37 +399,6 @@
     </div>
     <div class="field" style="max-width:320px;margin-top:8px;"><input id="pendingMembershipSearch" placeholder="Hledat podle jména nebo e-mailu..." oninput="renderPendingMemberships()"></div>
     <table class="admin-table" id="pendingMembershipsTable" style="margin-top:12px;"></table>
-
-    <div class="section-title">Hromadný e-mail</div>
-    <p class="page-sub" style="margin-top:-6px;">Pošle e-mail všem členům (nebo jen vybrané úrovni), každému zvlášť, ne přes cc/bcc.</p>
-    <div class="card" style="display:block;">
-      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
-        <div class="field" style="flex:1;min-width:200px;margin:0;"><label>Komu — členská úroveň</label>
-          <select id="bulkEmailTier">
-            <option value="all">Všem členům</option>
-            <option value="clen">Jen úroveň "Člen"</option>
-            <option value="trener">Jen úroveň "Trenér"</option>
-            <option value="none">Jen "Nečlen"</option>
-          </select>
-        </div>
-        <div class="field" style="flex:1;min-width:200px;margin:0;"><label>Komu — hráčská úroveň</label>
-          <select id="bulkEmailLevel">
-            <option value="all">Všechny hráčské úrovně</option>
-            <option value="D2">D2 — Začátečník</option>
-            <option value="D1">D1 — Začátečník+</option>
-            <option value="C2">C2 — Mírně pokročilý</option>
-            <option value="C1">C1 — Mírně pokročilý+</option>
-            <option value="B2">B2 — Pokročilý</option>
-            <option value="B1">B1 — Pokročilý+</option>
-            <option value="A">A — Závodní</option>
-          </select>
-        </div>
-      </div>
-      <div class="field" style="margin-top:10px;"><label>Předmět</label><input id="bulkEmailSubject" placeholder="např. Letní provoz kurtů — změna otevírací doby"></div>
-      <div class="field" style="margin-top:10px;"><label>Text zprávy</label><textarea id="bulkEmailMessage" rows="6" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;" placeholder="Ahoj,&#10;&#10;od pondělí..."></textarea></div>
-      <button class="btn btn-dark" style="margin-top:14px;" onclick="sendBulkEmail()" id="bulkEmailBtn">Odeslat</button>
-      <div id="bulkEmailStatus" style="margin-top:10px;font-size:13px;color:#6E6E6E;"></div>
-    </div>
 
     <div class="section-title">Opakované rezervace (série)</div>
     <p class="page-sub" style="margin-top:-6px;">Pravidelné skupiny — zrušíš celou sérii jedním tlačítkem, ne termín po termínu.</p>
@@ -938,7 +873,6 @@ function renderHeader(){
   document.querySelectorAll('.legend-admin-only').forEach(el=>{ el.style.display = isAdmin() ? '' : 'none'; });
   document.getElementById('dashboardTab').style.display = isAdmin() ? '' : 'none';
   document.getElementById('weekTab').style.display = isAdmin() ? '' : 'none';
-  document.getElementById('bulkEmailTab').style.display = isAdmin() ? '' : 'none';
 }
 function toggleProfileMenu(e){ e.stopPropagation(); document.getElementById('profileMenu').classList.toggle('show'); }
 async function goToCreateEvent(){
@@ -1698,41 +1632,6 @@ document.getElementById('adminWeekPrev').onclick = ()=>{ const d=new Date(adminW
 document.getElementById('adminWeekNext').onclick = ()=>{ const d=new Date(adminWeekAnchorDate+'T00:00:00'); d.setDate(d.getDate()+7); adminWeekAnchorDate=toLocalISODate(d); renderAdminWeekGrid(); };
 document.getElementById('adminWeekTodayBtn').onclick = ()=>{ adminWeekAnchorDate=todayISO(); renderAdminWeekGrid(); };
 
-async function sendBulkEmail(){
-  const subject = document.getElementById('bulkEmailSubject').value.trim();
-  const message = document.getElementById('bulkEmailMessage').value.trim();
-  const tierFilter = document.getElementById('bulkEmailTier').value;
-  const levelFilter = document.getElementById('bulkEmailLevel').value;
-  if(!subject || !message){ toast('Vyplň předmět i text zprávy'); return; }
-
-  const tierLabel = {all:'všem členům', clen:'úrovni Člen', trener:'úrovni Trenér', none:'úrovni Nečlen'}[tierFilter];
-  const levelLabel = levelFilter === 'all' ? '' : ` a hráčské úrovni ${levelFilter}`;
-  if(!confirm(`Opravdu odeslat tenhle e-mail ${tierLabel}${levelLabel}? Nejde to vzít zpátky.`)) return;
-
-  const btn = document.getElementById('bulkEmailBtn');
-  btn.disabled = true;
-  document.getElementById('bulkEmailStatus').textContent = 'Odesílám…';
-
-  const { data, error } = await sb.functions.invoke('send-bulk-email', {
-    body: { subject, message, tierFilter, levelFilter }
-  });
-
-  btn.disabled = false;
-  if(error){
-    document.getElementById('bulkEmailStatus').textContent = 'Chyba: ' + error.message;
-    return;
-  }
-  if(data.error){
-    document.getElementById('bulkEmailStatus').textContent = 'Chyba: ' + data.error;
-    return;
-  }
-  document.getElementById('bulkEmailStatus').textContent = `Odesláno ${data.sent} z ${data.total}.` + (data.errors?.length ? ` (${data.errors.length} dávek selhalo, zkus to znovu)` : '');
-  if(data.sent > 0){
-    toast(`E-mail odeslán (${data.sent}×)`);
-    document.getElementById('bulkEmailSubject').value = '';
-    document.getElementById('bulkEmailMessage').value = '';
-  }
-}
 
 async function renderMine(){
   const el = document.getElementById('mineList');
@@ -2804,41 +2703,6 @@ async function updateMemberNote(userId){
   if(error){ toast('Chyba: '+error.message); return; }
   toast('Poznámka uložena');
   await renderMembers();
-}
-async function sendBulkEmail(){
-  const subject = document.getElementById('bulkEmailSubject').value.trim();
-  const message = document.getElementById('bulkEmailMessage').value.trim();
-  const tierFilter = document.getElementById('bulkEmailTier').value;
-  const levelFilter = document.getElementById('bulkEmailLevel').value;
-  if(!subject || !message){ toast('Vyplň předmět i text zprávy'); return; }
-
-  const tierLabel = {all:'všem členům', clen:'úrovni Člen', trener:'úrovni Trenér', none:'úrovni Nečlen'}[tierFilter];
-  const levelLabel = levelFilter === 'all' ? '' : ` a hráčské úrovni ${levelFilter}`;
-  if(!confirm(`Opravdu odeslat tenhle e-mail ${tierLabel}${levelLabel}? Nejde to vzít zpátky.`)) return;
-
-  const btn = document.getElementById('bulkEmailBtn');
-  btn.disabled = true;
-  document.getElementById('bulkEmailStatus').textContent = 'Odesílám…';
-
-  const { data, error } = await sb.functions.invoke('send-bulk-email', {
-    body: { subject, message, tierFilter, levelFilter }
-  });
-
-  btn.disabled = false;
-  if(error){
-    document.getElementById('bulkEmailStatus').textContent = 'Chyba: ' + error.message;
-    return;
-  }
-  if(data.error){
-    document.getElementById('bulkEmailStatus').textContent = 'Chyba: ' + data.error;
-    return;
-  }
-  document.getElementById('bulkEmailStatus').textContent = `Odesláno ${data.sent} z ${data.total}.` + (data.errors?.length ? ` (${data.errors.length} dávek selhalo, zkus to znovu)` : '');
-  if(data.sent > 0){
-    toast(`E-mail odeslán (${data.sent}×)`);
-    document.getElementById('bulkEmailSubject').value = '';
-    document.getElementById('bulkEmailMessage').value = '';
-  }
 }
 async function applyPendingMatch(userId, pendingId){
   const match = pendingMembershipsCache.find(p=>p.id===pendingId);
