@@ -443,6 +443,7 @@
     <div class="field"><label>Jméno a příjmení</label><input id="profileName" placeholder="Jana Nováková"></div>
     <div class="field"><label>Telefon</label><input id="profilePhone" placeholder="+420 602 000 000"></div>
     <div class="field"><label>Herní úroveň</label><select id="profileLevel"></select><div id="profileLevelDetail"></div></div>
+    <div class="field"><label>Číslo popisné v Semicích (volitelné)</label><input id="profileHouseNumber" placeholder="např. 175"><div style="font-size:12px;color:#6E6E6E;margin-top:2px;">Máš trvalé bydliště v Semicích? Vyplň číslo popisné a appka ti automaticky ověří nárok na slevu 50 %.</div></div>
     <button class="btn btn-primary" style="width:100%;" onclick="saveProfile()">Uložit a pokračovat</button>
     <button class="btn btn-ghost" style="width:100%;margin-top:8px;" onclick="logout();closeModal('profileOverlay')">Odhlásit se (přihlásit jiným účtem)</button>
   </div>
@@ -838,10 +839,17 @@ function normalizeCzPhone(raw){
   if(/^[0-9]{9}$/.test(digits)) return '+420'+digits;
   return null;
 }
+function promptSemiceResidency(){
+  const houseNumber = prompt('Číslo popisné tvého trvalého bydliště v Semicích:');
+  if(!houseNumber || !houseNumber.trim()) return;
+  checkSemiceResidency(profile.full_name, houseNumber.trim());
+}
+
 async function saveProfile(){
   const full_name = document.getElementById('profileName').value.trim();
   const rawPhone = document.getElementById('profilePhone').value.trim();
   const level = document.getElementById('profileLevel').value;
+  const houseNumber = document.getElementById('profileHouseNumber').value.trim();
   if(!full_name || !rawPhone){ toast('Vyplň jméno i telefon'); return; }
   const phone = normalizeCzPhone(rawPhone);
   if(!phone){ toast('Telefon nevypadá jako platné číslo (např. 602 123 456 nebo +420 602 123 456)'); return; }
@@ -852,7 +860,30 @@ async function saveProfile(){
   profile = data;
   closeModal('profileOverlay');
   renderHeader(); renderAll();
-  toast(`Vítej, ${full_name}!`);
+  if(houseNumber){
+    await checkSemiceResidency(full_name, houseNumber);
+  } else {
+    toast(`Vítej, ${full_name}!`);
+  }
+}
+
+// Rozdělí "Jméno Příjmení" na první/poslední slovo (poslední slovo = příjmení, funguje i pro víceslovná jména)
+async function checkSemiceResidency(fullName, houseNumber){
+  const parts = fullName.trim().split(/\s+/);
+  const lastName = parts.pop();
+  const firstName = parts.join(' ');
+  const { data, error } = await sb.rpc('check_and_apply_semice_residency', {
+    p_first_name: firstName, p_last_name: lastName, p_house_number: houseNumber
+  });
+  if(error){ toast(`Vítej, ${fullName}! (Ověření bydliště se nepovedlo, kontaktuj správce.)`); return; }
+  if(data === true){
+    const { data: fresh } = await sb.from('member_profiles').select('*').eq('user_id', session.user.id).single();
+    if(fresh) profile = fresh;
+    renderHeader();
+    toast(`Vítej, ${fullName}! Bydliště v Semicích ověřeno, sleva 50 % je aktivní.`);
+  } else {
+    toast(`Vítej, ${fullName}! Zadané jméno/číslo popisné se nenašlo v seznamu obyvatel — pokud si myslíš, že je to chyba, ozvi se správci klubu.`);
+  }
 }
 
 /* ================= HEADER / NAV ================= */
@@ -865,6 +896,7 @@ function renderHeader(){
       <div class="profile-pill" onclick="toggleProfileMenu(event)">
         <span class="dot"></span> ${profile.full_name.split(' ')[0]} ${isAdmin()?'· admin':''}
         <div class="profile-menu" id="profileMenu">
+          ${!profile.is_semice_resident ? `<button onclick="event.stopPropagation();closeProfileMenu();promptSemiceResidency()">🏠 Ověřit slevu pro obyvatele Semic</button>` : ''}
           <button onclick="event.stopPropagation();closeProfileMenu();logout()">Odhlásit se</button>
         </div>
       </div>`;
@@ -2617,7 +2649,7 @@ function paintMembersTable(){
   table.innerHTML = members.length ? `
     <tr><th>Zákazník</th><th>E-mail</th><th>${revenueHeader}</th><th>${countHeader}</th><th>Telefon</th><th>Členská úroveň</th><th>Hráčská úroveň</th><th>Role</th><th></th></tr>
     ${members.map(m=>`<tr>
-      <td><b>${m.full_name}</b>${m.admin_note ? `<br><small style="color:#6E6E6E;font-weight:400;">${m.admin_note}</small>` : ''}</td>
+      <td><b>${m.full_name}</b>${m.is_semice_resident ? ' <span title="Ověřený obyvatel Semic (sleva 50 %)">🏠</span>' : ''}${m.admin_note ? `<br><small style="color:#6E6E6E;font-weight:400;">${m.admin_note}</small>` : ''}</td>
       <td>${m.email || '—'}</td><td>${m.revenue} Kč</td><td>${m.count}</td><td>${m.phone||'—'}</td>
       <td>${(m.role==='admin'||m.role==='owner') ? 'Admin' : m.role==='recepce' ? `Recepce (${venueNameById(m.scoped_venue_id) || 'areál nevybrán'})` : (tierLabel[m.membership_tier] || 'Nečlen') + ' (' + m.discount_percent + ' %)'}</td>
       <td>${levelLabelOf(m.level)}</td><td>${m.role}</td>
