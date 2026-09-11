@@ -723,8 +723,8 @@ function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg
 function showModal(id){ document.getElementById(id).classList.add('show'); }
 function closeModal(id){ document.getElementById(id).classList.remove('show'); }
 function genVS(){ return Date.now().toString().slice(-9); }
-const CLUB_IBAN = 'CZ7420100000002603548015';
-const CLUB_ACCOUNT_DISPLAY = '2603548015/2010';
+const CLUB_IBAN = 'CZ6020100000002001773071';
+const CLUB_ACCOUNT_DISPLAY = '2001773071/2010';
 
 function buildSpdPaymentString(amount, vs, message){
   // Český standard "QR Platba" (SPD - Short Payment Descriptor).
