@@ -1195,7 +1195,6 @@ function openBookingModal({courtId, startHour, adminMode}){
   }
 
   document.getElementById('openMatchCheck').checked = false;
-  document.getElementById('openMatchRow').style.display = '';
   document.getElementById('openMatchLevelBox').style.display = 'none';
   populateLevelSelect('openMatchLevel', profile ? profile.level : 'C2', 'openMatchLevelDetail');
 
@@ -1273,7 +1272,6 @@ function updateDurationSummary(){
 }
 function onRepeatToggle(checked){
   document.getElementById('repeatBox').style.display = checked ? 'block' : 'none';
-  document.getElementById('openMatchRow').style.display = checked ? 'none' : '';
   const omCheck = document.getElementById('openMatchCheck');
   omCheck.checked = false;
   document.getElementById('openMatchLevelBox').style.display = 'none';
@@ -1369,18 +1367,8 @@ function removePlayerRow(idx){
 }
 function updateSmartFillNudge(){
   const nudge = document.getElementById('smartFillNudge');
-  const checkbox = document.getElementById('openMatchCheck');
-  if(!nudge || !checkbox) return;
-  const maxPlayers = booking.loc.maxPlayers || 4;
-  const filled = booking.players.length;
-  const missing = maxPlayers - filled;
-  if(checkbox.checked || missing <= 0 || filled === 0){
-    nudge.style.display = 'none';
-    return;
-  }
-  document.getElementById('smartFillNudgeTitle').textContent =
-    `Chybí ${missing} hráč${missing===1?'':(missing<5?'i':'')} do plného kurtu.`;
-  nudge.style.display = '';
+  if(nudge) nudge.style.display = 'none';
+  return; // Smart Fill / Open Match je pro Semice v1 vypnuté
 }
 function enableSmartFillFromNudge(){
   const checkbox = document.getElementById('openMatchCheck');
@@ -1473,10 +1461,11 @@ async function confirmBookingSingle(){
 
   let payment = null;
   if(reservation.status === 'pending_payment'){
-    const { data: p } = await sb.from('payments').insert({
+    const { data: p, error: payErr } = await sb.from('payments').insert({
       club_id: CLUB_ID, reservation_id: reservation.id, amount: reservation.amount_due,
       variable_symbol: genVS(), status: 'created'
     }).select().single();
+    if(payErr){ toast('Rezervace vznikla, ale platbu se nepodařilo připravit: ' + payErr.message); }
     payment = p;
   }
 
