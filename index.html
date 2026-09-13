@@ -820,7 +820,13 @@ async function verifyLoginCode(){
   const code = document.getElementById('loginCode').value.trim();
   if(!email || !code){ toast('Vyplň e-mail i kód'); return; }
   document.getElementById('loginStatus').textContent = 'Ověřuji kód...';
-  const { error } = await sb.auth.verifyOtp({ email, token: code, type: 'email' });
+
+  // Nová registrace posílá kód typu "signup", opětovné přihlášení typu "email" —
+  // appka neví předem, který z mailu dorazil, tak zkusí oba.
+  let { error } = await sb.auth.verifyOtp({ email, token: code, type: 'email' });
+  if(error){
+    ({ error } = await sb.auth.verifyOtp({ email, token: code, type: 'signup' }));
+  }
   if(error){
     document.getElementById('loginStatus').textContent = 'Kód nesedí nebo vypršel — zkus to znovu, nebo si nech poslat nový.';
     return;
