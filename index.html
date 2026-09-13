@@ -390,7 +390,7 @@
         <div class="field" style="flex:1;min-width:160px;margin:0;"><label>Jméno (volitelné)</label><input id="pendingName" placeholder="Jana Nováková"></div>
         <div class="field" style="flex:1;min-width:140px;margin:0;"><label>Úroveň</label>
           <select id="pendingTier">
-            <option value="clen">Člen — 20 % sleva</option>
+            <option value="clen">Člen — 50 % sleva</option>
             <option value="trener">Trenér — 100 % (zdarma)</option>
           </select>
         </div>
@@ -2687,7 +2687,7 @@ function openMemberDetail(userId){
       <div class="price-row"><span>Členská úroveň</span><span>
         <select id="editTier" onchange="updateMemberTier('${m.user_id}', this.value)">
           <option value="none" ${m.membership_tier==='none'?'selected':''}>Nečlen — 0 %</option>
-          <option value="clen" ${m.membership_tier==='clen'?'selected':''}>Člen — 20 % sleva</option>
+          <option value="clen" ${m.membership_tier==='clen'?'selected':''}>Člen — 50 % sleva</option>
           <option value="trener" ${m.membership_tier==='trener'?'selected':''}>Trenér — 100 % (zdarma)</option>
         </select>
       </span></div>
@@ -2750,7 +2750,7 @@ async function applyPendingMatch(userId, pendingId){
   await renderPendingMemberships();
 }
 async function updateMemberTier(userId, tier){
-  const discount = {none:0, clen:20, trener:100}[tier];
+  const discount = {none:0, clen:50, trener:100}[tier];
   const { error } = await sb.from('member_profiles').update({membership_tier: tier, discount_percent: discount}).eq('user_id', userId);
   if(error){ toast('Chyba: '+error.message); return; }
   toast('Členská úroveň upravena'); await renderMembers();
@@ -2898,7 +2898,7 @@ async function addPendingMembership(){
   const full_name = document.getElementById('pendingName').value.trim();
   const tier = document.getElementById('pendingTier').value;
   if(!email || !email.includes('@')){ toast('Zadej platný e-mail'); return; }
-  const discount = {clen:20, trener:100}[tier];
+  const discount = {clen:50, trener:100}[tier];
   const { error } = await sb.from('pending_memberships').insert({
     club_id: CLUB_ID, email, full_name: full_name || null, membership_tier: tier, discount_percent: discount, created_by: session.user.email
   });
