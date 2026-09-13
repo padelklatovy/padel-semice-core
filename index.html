@@ -311,6 +311,16 @@
     <h1 class="page-title">Admin</h1>
     <p class="page-sub">Přehled rezervací, nezaplacené platby, ruční správa.</p>
 
+    <div class="section-title">Předschválení adminové</div>
+    <p class="page-sub" style="margin-top:-6px;">Přidej e-mail — jakmile se ten člověk poprvé zaregistruje v appce, automaticky dostane roli admin.</p>
+    <div class="card" style="display:block;">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+        <div class="field" style="flex:2;min-width:220px;margin:0;"><label>E-mail</label><input id="pendingAdminEmail" placeholder="jmeno@example.cz" type="email"></div>
+        <button class="btn btn-dark" onclick="addPendingAdmin()">Přidat</button>
+      </div>
+      <table class="admin-table" id="pendingAdminsTable" style="margin-top:12px;"></table>
+    </div>
+
     <div class="section-title">Obsazenost všech hřišť</div>
     <div class="date-bar">
       <div class="date-nav"><button class="icon-btn" id="overviewPrevDay">‹</button><button class="icon-btn" id="overviewNextDay">›</button></div>
@@ -859,11 +869,18 @@ async function saveProfile(){
   if(error){ toast('Chyba: ' + error.message); return; }
   profile = data;
   closeModal('profileOverlay');
+
+  const { data: becameAdmin } = await sb.rpc('check_and_apply_pending_admin');
+  if(becameAdmin){
+    const { data: fresh } = await sb.from('member_profiles').select('*').eq('user_id', session.user.id).single();
+    if(fresh) profile = fresh;
+  }
+
   renderHeader(); renderAll();
   if(houseNumber){
     await checkSemiceResidency(full_name, houseNumber);
   } else {
-    toast(`Vítej, ${full_name}!`);
+    toast(becameAdmin ? `Vítej, ${full_name}! Byl jsi nastaven jako admin.` : `Vítej, ${full_name}!`);
   }
 }
 
@@ -2375,6 +2392,7 @@ async function renderAdmin(){
   await renderPendingMemberships();
   await renderUnmatchedPayments();
   await renderRefundsPending();
+  await renderPendingAdmins();
 
   const courtSel = document.getElementById('eventCourt');
   courtSel.innerHTML = '';
@@ -2599,6 +2617,34 @@ async function createEvent(){
 
 /* ================= ADMIN: ČLENOVÉ (skutečná tabulka) ================= */
 let membersCache = [];
+async function addPendingAdmin(){
+  const email = document.getElementById('pendingAdminEmail').value.trim().toLowerCase();
+  if(!email || !email.includes('@')){ toast('Zadej platný e-mail'); return; }
+  const { error } = await sb.from('pending_admins').insert({ email, added_by: session.user.email });
+  if(error){ toast('Chyba: '+error.message); return; }
+  document.getElementById('pendingAdminEmail').value = '';
+  toast('Přidáno — až se přihlásí, dostane roli admin');
+  await renderPendingAdmins();
+}
+async function renderPendingAdmins(){
+  const table = document.getElementById('pendingAdminsTable'); if(!table) return;
+  const { data, error } = await sb.from('pending_admins').select('*').order('created_at', {ascending:false});
+  if(error){ table.innerHTML = ''; return; }
+  table.innerHTML = data && data.length ? `
+    <tr><th>E-mail</th><th>Přidáno</th><th></th></tr>
+    ${data.map(p => `<tr>
+      <td>${p.email}</td>
+      <td>${new Date(p.created_at).toLocaleDateString('cs-CZ')}</td>
+      <td><button class="btn btn-sm btn-ghost" onclick="removePendingAdmin('${p.email}')">Zrušit</button></td>
+    </tr>`).join('')}
+  ` : `<tr><td style="padding:12px;color:#948e83;">Žádní čekající adminové</td></tr>`;
+}
+async function removePendingAdmin(email){
+  const { error } = await sb.from('pending_admins').delete().eq('email', email);
+  if(error){ toast('Chyba: '+error.message); return; }
+  await renderPendingAdmins();
+}
+
 async function renderMembers(){
   const { data, error } = await sb.from('member_profiles').select('*').order('full_name');
   if(error){ toast('Chyba: '+error.message); return; }
