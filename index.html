@@ -1292,7 +1292,7 @@ function updateSeriesSummary(){
   const base = Math.round(booking.duration * booking.loc.priceHour);
   const seriesPlayers = booking.players.length ? booking.players : [{discount:0}];
   const seriesOrganizer = seriesPlayers.find(p=>p.isOrganizer) || seriesPlayers[0];
-  const discount = seriesOrganizer.discount === 100 ? 100 : avgDiscount(seriesPlayers);
+  const discount = (!booking.adminMode && isAdmin()) ? 100 : seriesOrganizer.discount;
   const perOccurrence = Math.round(base * (1 - discount/100));
   const total = perOccurrence * count;
   summaryEl.innerHTML = `<b>${count}× termín</b> po ${perOccurrence} Kč = <b>${total} Kč celkem za sérii</b><br>Neplatí se ale najednou — každý termín má vlastní QR platbu (najdeš postupně v „Moje rezervace").`;
@@ -1384,7 +1384,7 @@ function updatePriceBox(){
   const base = Math.round(booking.duration * booking.loc.priceHour);
   const players = booking.players.length ? booking.players : [{discount:0}];
   const organizer = players.find(p=>p.isOrganizer) || players[0];
-  const discount = organizer.discount === 100 ? 100 : avgDiscount(players);
+  const discount = (!booking.adminMode && isAdmin()) ? 100 : organizer.discount;
   const total = Math.round(base * (1 - discount/100));
   document.getElementById('priceDurationLabel').textContent = booking.duration + ' h';
   document.getElementById('basePriceLabel').textContent = base + ' Kč';
@@ -1413,9 +1413,10 @@ async function confirmBooking(){
 function buildBasePayload(date){
   const base = Math.round(booking.duration * booking.loc.priceHour);
   const organizer = booking.players.find(p=>p.isOrganizer) || booking.players[0];
-  // Trenér (100% sleva) rezervuje celý kurt zdarma, i když by se jinak sleva
-  // poměrně rozpočítávala mezi všechny hráče podle kapacity kurtu.
-  const discount = organizer.discount === 100 ? 100 : avgDiscount(booking.players);
+  // Sleva se počítá vždy podle organizátora rezervace a platí na CELÝ kurt —
+  // ne se poměrně rozpočítává mezi jednotlivé přidané spoluhráče. Admin
+  // rezervující sám pro sebe (mimo adminMode) má taky rovnou 100 %.
+  const discount = (!booking.adminMode && isAdmin()) ? 100 : organizer.discount;
   const amount = Math.round(base * (1 - discount/100));
   const paidNow = booking.adminMode && booking.paidNow;
   return {
