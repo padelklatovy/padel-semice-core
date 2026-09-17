@@ -1006,9 +1006,7 @@ async function loadTodayOccupancy(){
   const idToSlug = {};
   Object.keys(venuesConfig).forEach(slug=>{ idToSlug[venuesConfig[slug].id] = slug; });
 
-  const { data, error } = await sb.from('reservations').select('venue_id, start_hour, end_hour, status')
-    .eq('date', todayISO())
-    .not('status', 'in', '(cancelled_by_user,cancelled_by_admin,expired)');
+  const { data, error } = await sb.rpc('get_public_reservations_for_date', { p_date: todayISO() });
   todayOccupancy = {};
   Object.keys(venuesConfig).forEach(slug=>{
     const loc = venuesConfig[slug];
@@ -1074,9 +1072,15 @@ function backToProducts(){
 /* ================= GRID ================= */
 async function loadGridReservations(){
   const loc = activeLoc();
-  const { data, error } = await sb.from('reservations').select('*').eq('venue_id', loc.id).eq('date', selectedDate);
-  if(error){ toast('Chyba načítání rezervací: ' + error.message); gridReservations = []; return; }
-  gridReservations = data;
+  if(canManageVenue(currentLocationId)){
+    const { data, error } = await sb.from('reservations').select('*').eq('venue_id', loc.id).eq('date', selectedDate);
+    if(error){ toast('Chyba načítání rezervací: ' + error.message); gridReservations = []; return; }
+    gridReservations = data;
+  } else {
+    const { data, error } = await sb.rpc('get_public_reservations', { p_venue_id: loc.id, p_date: selectedDate });
+    if(error){ toast('Chyba načítání rezervací: ' + error.message); gridReservations = []; return; }
+    gridReservations = data;
+  }
 }
 function findReservationAt(courtId, hour){
   return gridReservations.find(r => r.court_id===courtId && hour >= r.start_hour && hour < r.end_hour && !['cancelled_by_user','cancelled_by_admin','expired'].includes(r.status));
