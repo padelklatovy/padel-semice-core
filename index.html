@@ -1181,7 +1181,8 @@ function openBookingModal({courtId, startHour, adminMode}){
     courtId, startHour, adminMode, loc,
     duration: loc.minDuration,
     players: adminMode ? [] : [{name: profile.full_name, discount: profile.discount_percent, isOrganizer:true}],
-    paidNow: false
+    paidNow: false,
+    bookingForSelf: false
   };
   document.getElementById('bookingSub').textContent = `${loc.name} · ${fmtDate(selectedDate)}`;
   populateCourtSelect();
@@ -1190,8 +1191,8 @@ function openBookingModal({courtId, startHour, adminMode}){
   const orgBox = document.getElementById('organizerFields');
   if(adminMode){
     orgBox.innerHTML = `
-      <button type="button" class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:10px;" onclick="fillMyOwnDetails()">Rezervuji pro sebe — zdarma</button>
-      <div class="field"><label>Jméno hráče (pro koho rezervace je — ukáže se v gridu)</label><input id="orgName" placeholder="Jana Nováková" oninput="syncOrganizer()"></div>
+      <button type="button" class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:10px;" onclick="fillMyOwnDetails()">Rezervuji pro sebe</button>
+      <div class="field"><label>Jméno hráče (pro koho rezervace je — ukáže se v gridu)</label><input id="orgName" placeholder="Jana Nováková" oninput="booking.bookingForSelf=false;syncOrganizer()"></div>
       <div class="field"><label>Telefon (volitelné)</label><input id="orgPhone" placeholder="+420 600 000 000"></div>
       <div class="field"><label>Sleva organizátora</label>
         <select id="orgDiscount" onchange="syncOrganizer()">${DISCOUNT_OPTIONS.map(d=>`<option value="${d}" ${d===(profile.discount_percent||0)?'selected':''}>${d===100?'100 % (zdarma)':d+' %'}</option>`).join('')}</select>
@@ -1296,7 +1297,7 @@ function updateSeriesSummary(){
   const base = Math.round(booking.duration * booking.loc.priceHour);
   const seriesPlayers = booking.players.length ? booking.players : [{discount:0}];
   const seriesOrganizer = seriesPlayers.find(p=>p.isOrganizer) || seriesPlayers[0];
-  const discount = (!booking.adminMode && isAdmin()) ? 100 : seriesOrganizer.discount;
+  const discount = seriesOrganizer.discount;
   const perOccurrence = Math.round(base * (1 - discount/100));
   const total = perOccurrence * count;
   summaryEl.innerHTML = `<b>${count}× termín</b> po ${perOccurrence} Kč = <b>${total} Kč celkem za sérii</b><br>Neplatí se ale najednou — každý termín má vlastní QR platbu (najdeš postupně v „Moje rezervace").`;
@@ -1304,7 +1305,8 @@ function updateSeriesSummary(){
 function fillMyOwnDetails(){
   document.getElementById('orgName').value = profile.full_name;
   document.getElementById('orgPhone').value = profile.phone;
-  document.getElementById('orgDiscount').value = '100'; // admin rezervuje pro sebe = vždy zdarma
+  document.getElementById('orgDiscount').value = String(profile.discount_percent || 0); // admin platí svou vlastní slevu jako kdokoliv jiný
+  booking.bookingForSelf = true;
   syncOrganizer();
 }
 function syncOrganizer(){
@@ -1388,7 +1390,7 @@ function updatePriceBox(){
   const base = Math.round(booking.duration * booking.loc.priceHour);
   const players = booking.players.length ? booking.players : [{discount:0}];
   const organizer = players.find(p=>p.isOrganizer) || players[0];
-  const discount = (!booking.adminMode && isAdmin()) ? 100 : organizer.discount;
+  const discount = organizer.discount;
   const total = Math.round(base * (1 - discount/100));
   document.getElementById('priceDurationLabel').textContent = booking.duration + ' h';
   document.getElementById('basePriceLabel').textContent = base + ' Kč';
@@ -1418,15 +1420,14 @@ function buildBasePayload(date){
   const base = Math.round(booking.duration * booking.loc.priceHour);
   const organizer = booking.players.find(p=>p.isOrganizer) || booking.players[0];
   // Sleva se počítá vždy podle organizátora rezervace a platí na CELÝ kurt —
-  // ne se poměrně rozpočítává mezi jednotlivé přidané spoluhráče. Admin
-  // rezervující sám pro sebe (mimo adminMode) má taky rovnou 100 %.
-  const discount = (!booking.adminMode && isAdmin()) ? 100 : organizer.discount;
+  // ne se poměrně rozpočítává mezi jednotlivé přidané spoluhráče.
+  const discount = organizer.discount;
   const amount = Math.round(base * (1 - discount/100));
   const paidNow = booking.adminMode && booking.paidNow;
   return {
     payload: {
       club_id: CLUB_ID, venue_id: booking.loc.id, court_id: booking.courtId,
-      member_id: booking.adminMode ? null : profile.user_id,
+      member_id: booking.adminMode ? (booking.bookingForSelf ? profile.user_id : null) : profile.user_id,
       organizer_name: organizer.name,
       organizer_phone: booking.adminMode ? (document.getElementById('orgPhone').value||'') : profile.phone,
       date, start_hour: booking.startHour, duration_hours: booking.duration, end_hour: booking.startHour + booking.duration,
